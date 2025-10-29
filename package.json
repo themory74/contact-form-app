@@ -1,9 +1,8 @@
 {
   "name": "contact-form-app",
   "version": "1.0.0",
-  "description": "Contact form backend for True Prime Digital",
+  "description": "True Prime Digital contact form API for email + MongoDB storage",
   "main": "server.js",
-  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
@@ -16,5 +15,7 @@
     "mongoose": "^8.19.2",
     "morgan": "^1.10.1",
     "nodemailer": "^7.0.10"
-  }
+  },
+  "author": "True Prime Digital",
+  "license": "ISC"
 }
