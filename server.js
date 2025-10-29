@@ -1,5 +1,5 @@
 // ============================
-// True Prime Digital Contact Form Server
+// True Prime Digital Contact Form API
 // ============================
 
 require("dotenv").config();
@@ -18,6 +18,8 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 app.use(morgan("dev"));
+
+// --- Serve Static Files from /public ---
 app.use(express.static(path.join(__dirname, "public")));
 
 // --- MongoDB Connection ---
@@ -35,36 +37,31 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// --- Contact Form Route ---
+// --- API Route ---
 app.post("/submit", async (req, res) => {
   try {
     const { name, email, message } = req.body;
-    console.log("📩 New form submission received:", { name, email, message });
+    console.log("📩 New form submission:", { name, email, message });
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: process.env.TO_EMAIL,
-      subject: `New Contact Form Message from ${name}`,
-      text: `
-        Name: ${name}
-        Email: ${email}
-        Message: ${message}
-      `,
+      subject: `New Message from ${name}`,
+      text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
     };
 
     await transporter.sendMail(mailOptions);
-
     console.log("✅ Email sent successfully");
     res.status(200).json({ success: true, message: "Message sent successfully!" });
   } catch (error) {
-    console.error("❌ Error sending message:", error);
-    res.status(500).json({ success: false, message: "Failed to send message. Please try again later." });
+    console.error("❌ Error sending email:", error);
+    res.status(500).json({ success: false, message: "Failed to send message." });
   }
 });
 
-// --- Root Route ---
+// --- Serve index.html on Root Route ---
 app.get("/", (req, res) => {
-  res.send("🚀 True Prime Digital Contact Form API is running successfully!");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 // --- Start Server (Render Ready) ---
