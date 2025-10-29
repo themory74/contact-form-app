@@ -3,55 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact Form</title>
+  <title>Contact Form | True Prime Digital</title>
   <style>
-    body { font-family: Arial; background: #f2f2f2; display: flex; justify-content: center; align-items: center; height: 100vh; }
-    .container { background: white; padding: 25px; border-radius: 10px; width: 350px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    input, textarea { width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 5px; border: 1px solid #ccc; }
-    button { background: #0077ff; color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; cursor: pointer; font-weight: bold; }
-    button:hover { background: #005fd4; }
-    #responseMessage { text-align: center; margin-top: 10px; font-weight: bold; }
+    body {
+      font-family: Poppins, sans-serif;
+      background: #0a0f2c;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    form {
+      background: #11173a;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(255, 179, 1, 0.3);
+      width: 350px;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #ffb301;
+    }
+    input, textarea {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 10px;
+      border: none;
+      border-radius: 5px;
+      outline: none;
+      font-size: 16px;
+    }
+    button {
+      background: linear-gradient(90deg, #0077ff, #ffb301);
+      border: none;
+      padding: 12px;
+      border-radius: 5px;
+      width: 100%;
+      color: #fff;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    button:hover {
+      opacity: 0.8;
+    }
+    #response {
+      text-align: center;
+      font-weight: bold;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
-  <div class="container">
+  <form id="contactForm">
     <h2>Contact Us</h2>
-    <form id="contactForm">
-      <input type="text" id="name" placeholder="Your Name" required />
-      <input type="email" id="email" placeholder="Your Email" required />
-      <textarea id="message" placeholder="Your Message" required></textarea>
-      <button type="submit">Send</button>
-    </form>
-    <p id="responseMessage"></p>
-  </div>
+    <input type="text" id="name" name="name" placeholder="Your Name" required />
+    <input type="email" id="email" name="email" placeholder="Your Email" required />
+    <textarea id="message" name="message" placeholder="Your Message" rows="4" required></textarea>
+    <button type="submit">Send Message</button>
+    <div id="response"></div>
+  </form>
 
   <script>
     const form = document.getElementById('contactForm');
-    const responseMessage = document.getElementById('responseMessage');
+    const responseDiv = document.getElementById('response');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      responseMessage.textContent = '⏳ Sending...';
+      responseDiv.textContent = "⏳ Sending message...";
 
       const data = {
-        name: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        message: document.getElementById('message').value
+        name: form.name.value.trim(),
+        email: form.email.value.trim(),
+        message: form.message.value.trim(),
       };
 
       try {
-        const res = await fetch('/submit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data)
+        const res = await fetch("https://contact-form-app-84vz.onrender.com/api/contact", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
         });
-        const text = await res.text();
-        responseMessage.textContent = text;
-        responseMessage.style.color = 'green';
-        form.reset();
+
+        const result = await res.json();
+        if (result.success) {
+          responseDiv.textContent = "✅ Message sent successfully!";
+          responseDiv.style.color = "limegreen";
+          form.reset();
+        } else {
+          responseDiv.textContent = "⚠️ Failed to send message. Try again.";
+          responseDiv.style.color = "red";
+        }
       } catch (err) {
-        responseMessage.textContent = '❌ Error sending message.';
-        responseMessage.style.color = 'red';
+        console.error("Error:", err);
+        responseDiv.textContent = "❌ Server error. Please try again later.";
+        responseDiv.style.color = "red";
       }
     });
   </script>
