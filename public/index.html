@@ -3,58 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Contact True Prime Digital</title>
+  <title>Contact Form</title>
   <style>
     body {
       background: #0a0f2c;
-      font-family: "Poppins", sans-serif;
-      color: #fff;
+      color: white;
+      font-family: Poppins, sans-serif;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
     }
-    .container {
+    form {
       background: #11163b;
       padding: 30px;
       border-radius: 10px;
       text-align: center;
-      width: 360px;
+      width: 350px;
     }
     input, textarea {
-      width: 90%;
+      width: 100%;
       padding: 10px;
       margin: 10px 0;
-      border: none;
       border-radius: 6px;
+      border: none;
       outline: none;
     }
     button {
       background: linear-gradient(90deg, #0077ff, #ffb301);
-      color: #fff;
       border: none;
       padding: 10px 20px;
       border-radius: 6px;
-      cursor: pointer;
+      color: white;
       font-weight: bold;
+      cursor: pointer;
     }
-    #responseMessage {
-      margin-top: 10px;
-      font-weight: 500;
+    #response {
+      margin-top: 15px;
+      font-weight: 600;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <form id="contactForm">
     <h2>Contact True Prime Digital</h2>
-    <form id="contactForm">
-      <input type="text" name="name" placeholder="Your Name" required />
-      <input type="email" name="email" placeholder="Your Email" required />
-      <textarea name="message" placeholder="Your Message" required></textarea>
-      <button type="submit">Send Message</button>
-    </form>
-    <div id="responseMessage"></div>
-  </div>
+    <input type="text" name="name" placeholder="Your Name" required />
+    <input type="email" name="email" placeholder="Your Email" required />
+    <textarea name="message" placeholder="Your Message" required></textarea>
+    <button type="submit">Send Message</button>
+    <p id="response"></p>
+  </form>
 
   <script src="form.js"></script>
 </body>
