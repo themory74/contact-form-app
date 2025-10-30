@@ -12,7 +12,7 @@ form.addEventListener("submit", async (e) => {
   responseMessage.className = "message sending";
 
   try {
-    const response = await fetch("/api/contact", {
+    const response = await fetch("https://contact-form-app-84vz.onrender.com/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, message }),
@@ -21,15 +21,18 @@ form.addEventListener("submit", async (e) => {
     const data = await response.json();
 
     if (response.ok && data.success) {
+      console.log("✅ Message sent successfully!");
       responseMessage.textContent = "✅ Message sent successfully!";
       responseMessage.className = "message success";
       form.reset();
     } else {
-      responseMessage.textContent = "❌ Server error. Please try again later.";
+      console.error("❌ Server response:", data);
+      responseMessage.textContent = "❌ Failed to send. Please try again later.";
       responseMessage.className = "message error";
     }
   } catch (error) {
-    responseMessage.textContent = "⚠️ Connection error. Please try again.";
+    console.error("⚠️ Connection error:", error);
+    responseMessage.textContent = "⚠️ Connection error. Try again.";
     responseMessage.className = "message error";
   }
 });

@@ -13,20 +13,23 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: "*", methods: ["POST", "GET"] }));
 
-// Handle paths for static files
+// Path setup
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Serve frontend files
 app.use(express.static(path.join(__dirname, "public")));
 
-// ---------- MONGO CONNECTION ----------
+// ---------- CONNECT MONGODB ----------
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ---------- API ROUTE ----------
+// ---------- CONTACT FORM API ----------
 app.post("/api/contact", async (req, res) => {
   const { name, email, message } = req.body;
+  console.log("📨 Form request received:", req.body); // LOG FOR CONFIRMATION
 
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -37,7 +40,7 @@ app.post("/api/contact", async (req, res) => {
         "api-key": process.env.BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: name, email: email },
+        sender: { name: name || "Website Visitor", email: email },
         to: [{ email: process.env.TO_EMAIL }],
         subject: `📩 New Contact Form Message from ${name}`,
         htmlContent: `
