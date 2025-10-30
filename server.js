@@ -4,61 +4,71 @@ import cors from "cors";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
 const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// --- MIDDLEWARE ---
+// MIDDLEWARE
 app.use(express.json());
-app.use(cors({
-  origin: ["https://contact-form-app-84vz.onrender.com", "http://localhost:3000"],
-  methods: ["POST", "GET"],
-}));
+app.use(
+  cors({
+    origin: ["https://contact-form-app-84vz.onrender.com"],
+    methods: ["POST", "GET"],
+  })
+);
 
-// --- MONGO CONNECTION ---
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
-
-// --- TEST ROUTE ---
+// SERVE FRONTEND
+app.use(express.static(path.join(__dirname, "public")));
 app.get("/", (req, res) => {
-  res.send("🚀 True Prime Digital Contact Form API is running successfully!");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// --- CONTACT ROUTE ---
+// MONGO CONNECTION
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+// EMAIL TRANSPORTER (BREVO)
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// CONTACT API ROUTE
 app.post("/api/contact", async (req, res) => {
+  const { name, email, message } = req.body;
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ success: false, error: "All fields required." });
+  }
+
+  const mailOptions = {
+    from: `"True Prime Digital" <${process.env.EMAIL_USER}>`,
+    to: process.env.TO_EMAIL,
+    subject: `New Contact Message from ${name}`,
+    text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
+  };
+
   try {
-    const { name, email, message } = req.body;
-    console.log("📨 Form received:", name, email, message);
-
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-
-    const mailOptions = {
-      from: `"True Prime Digital" <${process.env.EMAIL_USER}>`,
-      to: process.env.TO_EMAIL,
-      subject: `New Contact Message from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
-    };
-
     await transporter.sendMail(mailOptions);
-    console.log("✅ Email sent successfully!");
+    console.log("✅ Email sent successfully");
     res.status(200).json({ success: true, message: "Message sent successfully!" });
-
   } catch (error) {
-    console.error("❌ Error sending message:", error.message);
-    res.status(500).json({ success: false, message: "Server error. Please try again later." });
+    console.error("❌ Email sending failed:", error);
+    res.status(500).json({ success: false, error: "Failed to send email." });
   }
 });
 
-// --- START SERVER ---
+// SERVER LISTEN
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
