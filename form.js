@@ -1,4 +1,4 @@
-const form = document.querySelector("form");
+const form = document.getElementById("contactForm");
 const responseMessage = document.getElementById("responseMessage");
 
 form.addEventListener("submit", async (e) => {
@@ -9,30 +9,29 @@ form.addEventListener("submit", async (e) => {
   const message = form.querySelector("textarea[name='message']").value;
 
   responseMessage.textContent = "⏳ Sending...";
-  responseMessage.className = "message sending";
+  responseMessage.style.color = "#ffb301";
 
   try {
-    const response = await fetch("https://contact-form-app-84vz.onrender.com/api/contact", {
+    const res = await fetch("/api/contact", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, message }),
     });
 
-    const data = await response.json();
+    const data = await res.json();
+    console.log("📥 Server response:", data);
 
-    if (response.ok && data.success) {
-      console.log("✅ Message sent successfully!");
+    if (res.ok && data.success) {
       responseMessage.textContent = "✅ Message sent successfully!";
-      responseMessage.className = "message success";
+      responseMessage.style.color = "#00ff88";
       form.reset();
     } else {
-      console.error("❌ Server response:", data);
-      responseMessage.textContent = "❌ Failed to send. Please try again later.";
-      responseMessage.className = "message error";
+      responseMessage.textContent = "❌ Failed to send. Try again.";
+      responseMessage.style.color = "#ff4d4d";
     }
   } catch (error) {
     console.error("⚠️ Connection error:", error);
-    responseMessage.textContent = "⚠️ Connection error. Try again.";
-    responseMessage.className = "message error";
+    responseMessage.textContent = "⚠️ Server not responding. Try again.";
+    responseMessage.style.color = "#ff4d4d";
   }
 });

@@ -4,19 +4,58 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Contact True Prime Digital</title>
-  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: #0a0f2c;
+      font-family: "Poppins", sans-serif;
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: #11163b;
+      padding: 30px;
+      border-radius: 10px;
+      text-align: center;
+      width: 360px;
+    }
+    input, textarea {
+      width: 90%;
+      padding: 10px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 6px;
+      outline: none;
+    }
+    button {
+      background: linear-gradient(90deg, #0077ff, #ffb301);
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #responseMessage {
+      margin-top: 10px;
+      font-weight: 500;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Contact True Prime Digital</h1>
-    <form>
+    <h2>Contact True Prime Digital</h2>
+    <form id="contactForm">
       <input type="text" name="name" placeholder="Your Name" required />
       <input type="email" name="email" placeholder="Your Email" required />
       <textarea name="message" placeholder="Your Message" required></textarea>
       <button type="submit">Send Message</button>
-      <p id="responseMessage" class="message"></p>
     </form>
+    <div id="responseMessage"></div>
   </div>
+
   <script src="form.js"></script>
 </body>
 </html>
