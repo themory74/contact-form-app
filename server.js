@@ -3,23 +3,28 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
-import fetch from "node-fetch"; // make sure this is installed
+import fetch from "node-fetch";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
 const app = express();
 app.use(express.json());
-app.use(cors({
-  origin: "*",
-  methods: ["POST", "GET"]
-}));
+app.use(cors({ origin: "*", methods: ["POST", "GET"] }));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGO_URI)
+// Handle paths for static files
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, "public")));
+
+// ---------- MONGO CONNECTION ----------
+mongoose
+  .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// Contact form endpoint
+// ---------- API ROUTE ----------
 app.post("/api/contact", async (req, res) => {
   const { name, email, message } = req.body;
 
@@ -27,9 +32,9 @@ app.post("/api/contact", async (req, res) => {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        "accept": "application/json",
+        accept: "application/json",
         "content-type": "application/json",
-        "api-key": process.env.BREVO_API_KEY
+        "api-key": process.env.BREVO_API_KEY,
       },
       body: JSON.stringify({
         sender: { name: name, email: email },
@@ -41,8 +46,8 @@ app.post("/api/contact", async (req, res) => {
           <p><b>Email:</b> ${email}</p>
           <p><b>Message:</b></p>
           <p>${message}</p>
-        `
-      })
+        `,
+      }),
     });
 
     if (response.ok) {
@@ -59,6 +64,11 @@ app.post("/api/contact", async (req, res) => {
   }
 });
 
-// Start the server
+// ---------- SERVE FRONTEND ----------
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// ---------- START SERVER ----------
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

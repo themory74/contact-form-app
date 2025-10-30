@@ -1,51 +1,41 @@
 body {
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-  }
-  
-  .container {
-    background: white;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    width: 350px;
-    text-align: center;
-  }
-  
-  h2 {
-    margin-bottom: 20px;
-    color: #0077ff;
-  }
-  
-  input, textarea {
-    width: 100%;
-    margin-bottom: 15px;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-  }
-  
-  button {
-    width: 100%;
-    background: linear-gradient(90deg, #0077ff, #00a3cc);
-    color: white;
-    border: none;
-    padding: 12px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  
-  button:hover {
-    background: linear-gradient(90deg, #005fd4, #008fb3);
-  }
-  
-  #responseMessage {
-    margin-top: 15px;
-    color: green;
-    font-weight: bold;
-  }
+  background: linear-gradient(180deg, #0a0f2c 0%, #0077ff 100%);
+  font-family: Poppins, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  color: white;
+}
+.container {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 15px;
+  padding: 40px;
+  width: 360px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+input, textarea {
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(90deg, #0077ff, #ffb301);
+  border: none;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 8px;
+}
+.message {
+  margin-top: 10px;
+}
+.message.success { color: #4caf50; }
+.message.error { color: #ff5252; }
+.message.sending { color: #ffd700; }
