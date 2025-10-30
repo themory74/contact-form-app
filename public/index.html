@@ -1,39 +1,112 @@
-<script>
-    const form = document.querySelector("form");
-    const responseDiv = document.createElement("p");
-    form.appendChild(responseDiv);
-  
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Contact Form | True Prime Digital</title>
+  <style>
+    body {
+      background: radial-gradient(circle at top, #0A0F2C, #000);
+      color: #fff;
+      font-family: Poppins, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 0 25px rgba(0, 119, 255, 0.3);
+      border-radius: 12px;
+      padding: 30px;
+      width: 340px;
+      text-align: center;
+    }
+    h2 {
+      color: #FFB301;
+      margin-bottom: 20px;
+    }
+    input, textarea {
+      width: 100%;
+      margin-bottom: 15px;
+      padding: 12px;
+      border-radius: 6px;
+      border: none;
+      font-size: 14px;
+    }
+    button {
+      background: linear-gradient(to right, #0077FF, #FFB301);
+      color: white;
+      border: none;
+      padding: 12px;
+      width: 100%;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+      transition: 0.3s;
+    }
+    button:hover {
+      opacity: 0.9;
+      transform: scale(1.02);
+    }
+    #responseMessage {
+      margin-top: 10px;
+      font-size: 14px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Contact Us</h2>
+    <form id="contactForm">
+      <input type="text" id="name" placeholder="Your Name" required />
+      <input type="email" id="email" placeholder="Your Email" required />
+      <textarea id="message" rows="4" placeholder="Your Message" required></textarea>
+      <button type="submit">Send Message</button>
+      <div id="responseMessage"></div>
+    </form>
+  </div>
+
+  <script>
+    const form = document.getElementById("contactForm");
+    const responseMessage = document.getElementById("responseMessage");
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-  
-      const name = document.querySelector('input[name="name"]').value.trim();
-      const email = document.querySelector('input[name="email"]').value.trim();
-      const message = document.querySelector('textarea[name="message"]').value.trim();
-  
-      // ✅ Use your Render backend live URL
-      const apiURL = "https://contact-form-app-84vz.onrender.com/submit";
-  
+      responseMessage.textContent = "Sending...";
+      responseMessage.style.color = "#fff";
+
+      const data = {
+        name: form.name.value,
+        email: form.email.value,
+        message: form.message.value,
+      };
+
       try {
-        const res = await fetch(apiURL, {
+        const res = await fetch("/submit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, email, message }),
+          body: JSON.stringify(data),
         });
-  
-        const data = await res.json();
-  
-        if (data.success) {
-          responseDiv.textContent = "✅ Message sent successfully!";
-          responseDiv.style.color = "limegreen";
+
+        const text = await res.text();
+        if (res.ok) {
+          responseMessage.textContent = text;
+          responseMessage.style.color = "#00FF7F";
           form.reset();
         } else {
-          responseDiv.textContent = "❌ Failed to send message. Try again.";
-          responseDiv.style.color = "red";
+          responseMessage.textContent = text;
+          responseMessage.style.color = "red";
         }
-      } catch (err) {
-        console.error("⚠️ Error:", err);
-        responseDiv.textContent = "⚠️ Server error. Please try again later.";
-        responseDiv.style.color = "red";
+      } catch (error) {
+        responseMessage.textContent = "❌ Server error. Try again later.";
+        responseMessage.style.color = "red";
       }
     });
   </script>
+</body>
+</html>
