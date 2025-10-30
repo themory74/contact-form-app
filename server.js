@@ -17,9 +17,6 @@ app.use(cors({ origin: "*", methods: ["POST", "GET"] }));
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Serve frontend files
-app.use(express.static(path.join(__dirname, "public")));
-
 // ---------- CONNECT MONGODB ----------
 mongoose
   .connect(process.env.MONGO_URI)
@@ -29,7 +26,7 @@ mongoose
 // ---------- CONTACT FORM API ----------
 app.post("/api/contact", async (req, res) => {
   const { name, email, message } = req.body;
-  console.log("📨 Form request received:", req.body); // LOG FOR CONFIRMATION
+  console.log("📨 Form request received:", req.body);
 
   try {
     const response = await fetch("https://api.brevo.com/v3/smtp/email", {
@@ -68,6 +65,8 @@ app.post("/api/contact", async (req, res) => {
 });
 
 // ---------- SERVE FRONTEND ----------
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
