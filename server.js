@@ -1,56 +1,41 @@
-// ===============================
-// True Prime Digital Contact Form API
-// ===============================
-
 import express from "express";
-import cors from "cors";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import nodemailer from "nodemailer";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 const app = express();
-
-// ===============================
-// Middleware
-// ===============================
 app.use(express.json());
 app.use(cors());
-app.use(helmet());
 
-// Rate limiter (avoid spam)
-const limiter = rateLimit({
-  windowMs: 1 * 60 * 1000, // 1 minute
-  max: 5, // limit each IP to 5 requests per minute
-});
-app.use(limiter);
+// Setup __dirname for ES module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// ===============================
-// MongoDB Connection
-// ===============================
+// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// ===============================
-// Root Route
-// ===============================
+// Serve static files (HTML, CSS, JS)
+app.use(express.static(path.join(__dirname, "public")));
+
+// Serve index.html by default
 app.get("/", (req, res) => {
-  res.send("🚀 True Prime Digital Contact Form API is running successfully!");
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// ===============================
-// Contact Form Submission Route
-// ===============================
+// Handle contact form submission
 app.post("/submit", async (req, res) => {
   try {
     const { name, email, message } = req.body;
+    console.log("📨 Form received:", name, email, message);
 
-    console.log("📨 Form received:", { name, email, message });
-
+    // Email transport setup
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -62,11 +47,11 @@ app.post("/submit", async (req, res) => {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: process.env.TO_EMAIL,
-      subject: `📧 New Message from ${name}`,
+      subject: `New Message from ${name}`,
       text: `Name: ${name}\nEmail: ${email}\nMessage: ${message}`,
     });
 
-    console.log("✅ Email sent successfully!");
+    console.log("✅ Email sent successfully");
     res.status(200).send("✅ Message sent successfully!");
   } catch (error) {
     console.error("❌ Error sending message:", error);
@@ -74,9 +59,7 @@ app.post("/submit", async (req, res) => {
   }
 });
 
-// ===============================
-// Start Server (Render Compatible)
-// ===============================
+// Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
