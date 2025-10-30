@@ -1,21 +1,19 @@
 {
   "name": "contact-form-app",
   "version": "1.0.0",
-  "description": "True Prime Digital contact form API for email + MongoDB storage",
+  "description": "True Prime Digital contact form backend",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "express-rate-limit": "^8.2.0",
-    "helmet": "^8.1.0",
-    "mongoose": "^8.19.2",
-    "morgan": "^1.10.1",
-    "nodemailer": "^7.0.10"
-  },
-  "author": "True Prime Digital",
-  "license": "ISC"
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "mongoose": "^7.6.1",
+    "nodemailer": "^6.9.8",
+    "express-rate-limit": "^7.0.0"
+  }
 }
