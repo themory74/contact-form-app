@@ -1,71 +1,89 @@
 import express from "express";
-import fetch from "node-fetch";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
+import fetch from "node-fetch";
 import path from "path";
-import mongoose from "mongoose";
 import { fileURLToPath } from "url";
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const app = express();
-
-app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(cors());
 
-// MongoDB (optional)
+// ===== MongoDB Connection =====
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err));
+  .then(() => console.log("✅ MongoDB connected successfully!"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-// POST /api/contact
+// ===== Mongoose Schema =====
+const contactSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  date: { type: Date, default: Date.now },
+});
+
+const Contact = mongoose.model("Contact", contactSchema);
+
+// ===== API Route =====
 app.post("/api/contact", async (req, res) => {
-  const { name, email, message } = req.body;
-  console.log("📩 Received form:", { name, email, message });
-
   try {
-    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+    const { name, email, message } = req.body;
+
+    // Save contact data
+    const newContact = new Contact({ name, email, message });
+    await newContact.save();
+
+    // Send email via Brevo
+    const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
-        accept: "application/json",
-        "content-type": "application/json",
+        "accept": "application/json",
         "api-key": process.env.BREVO_API_KEY,
+        "content-type": "application/json",
       },
       body: JSON.stringify({
         sender: { name: "True Prime Digital", email: process.env.TO_EMAIL },
         to: [{ email: process.env.TO_EMAIL }],
-        subject: `📩 New message from ${name}`,
+        replyTo: { email },
+        subject: `New Contact Form Submission from ${name}`,
         htmlContent: `
-          <h3>New Contact Message</h3>
           <p><b>Name:</b> ${name}</p>
           <p><b>Email:</b> ${email}</p>
-          <p><b>Message:</b> ${message}</p>
+          <p><b>Message:</b><br>${message}</p>
         `,
       }),
     });
 
-    if (response.ok) {
-      console.log("✅ Email sent successfully via Brevo");
-      return res.json({ success: true, message: "Message sent successfully!" });
-    } else {
-      const errorData = await response.json();
-      console.error("❌ Brevo API Error:", errorData);
-      return res.status(500).json({ success: false, error: "Email failed to send" });
+    if (!brevoRes.ok) {
+      const errorText = await brevoRes.text();
+      console.error("❌ Email send failed:", errorText);
+      return res
+        .status(500)
+        .json({ success: false, error: "Email failed to send" });
     }
+
+    console.log("✅ Email sent successfully!");
+    res.status(200).json({ success: true, message: "Message sent successfully!" });
   } catch (error) {
-    console.error("⚠️ Server error:", error);
-    return res.status(500).json({ success: false, error: "Server error" });
+    console.error("❌ Server error:", error);
+    res.status(500).json({ success: false, error: "Server error occurred" });
   }
 });
 
-// Serve frontend
+// ===== Frontend Route =====
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
+// ===== Start Server =====
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
