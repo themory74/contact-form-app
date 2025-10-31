@@ -1,4 +1,3 @@
-// ===== IMPORTS =====
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -6,10 +5,10 @@ import fetch from "node-fetch";
 import mongoose from "mongoose";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-import Contact from "./models/Contact.js"; // <-- new model import
+import Contact from "./models/Contact.js";
 
-// ===== CONFIG =====
 dotenv.config();
+
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -19,10 +18,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // ===== CONNECT TO MONGODB =====
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
   .then(() => console.log("✅ MongoDB connected successfully"))
   .catch((err) => console.error("❌ MongoDB connection error:", err));
 
@@ -30,13 +30,14 @@ mongoose.connect(process.env.MONGO_URI, {
 app.post("/api/contact", async (req, res) => {
   try {
     const { name, email, message } = req.body;
+    console.log("🟢 New form received:", name, email);
 
-    // 1️⃣ SAVE CONTACT IN MONGODB
+    // Save to MongoDB
     const newContact = new Contact({ name, email, message });
     await newContact.save();
-    console.log("💾 Contact saved:", newContact);
+    console.log("💾 Contact saved to MongoDB:", newContact);
 
-    // 2️⃣ SEND EMAIL THROUGH BREVO
+    // Send via Brevo API
     const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
@@ -49,7 +50,7 @@ app.post("/api/contact", async (req, res) => {
         to: [{ email: process.env.TO_EMAIL }],
         subject: "📩 New Contact Form Message",
         htmlContent: `
-          <h2>New Contact Message</h2>
+          <h3>New Message Received</h3>
           <p><strong>Name:</strong> ${name}</p>
           <p><strong>Email:</strong> ${email}</p>
           <p><strong>Message:</strong> ${message}</p>
@@ -59,13 +60,14 @@ app.post("/api/contact", async (req, res) => {
 
     if (!brevoRes.ok) {
       const text = await brevoRes.text();
-      console.error("❌ Email send failed:", text);
-      return res.status(500).json({ success: false, error: "Email failed to send" });
+      console.error("❌ Brevo email failed:", text);
+      return res
+        .status(500)
+        .json({ success: false, error: "Email failed to send" });
     }
 
-    res.status(200).json({ success: true, message: "Message sent successfully!" });
     console.log("✅ Email sent successfully via Brevo");
-
+    res.status(200).json({ success: true, message: "Message sent successfully!" });
   } catch (error) {
     console.error("❌ Error saving contact:", error);
     res.status(500).json({ success: false, error: "Server error occurred" });
