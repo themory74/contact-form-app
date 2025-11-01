@@ -1,4 +1,4 @@
-// form.js — final deluxe version (popup visual edition)
+// form.js — True Prime Digital Edition (includes phone field + popup visual)
 
 const form = document.getElementById("contactForm");
 const submitBtn = document.getElementById("submitBtn");
@@ -15,10 +15,12 @@ form.addEventListener("submit", async (e) => {
   submitBtn.textContent = "Sending...";
   submitBtn.style.opacity = "0.7";
 
+  // ✅ Include phone field
   const formData = {
-    name: document.getElementById("name").value,
-    email: document.getElementById("email").value,
-    message: document.getElementById("message").value,
+    name: document.getElementById("name").value.trim(),
+    email: document.getElementById("email").value.trim(),
+    phone: document.getElementById("phone").value.trim(), // new
+    message: document.getElementById("message").value.trim(),
   };
 
   try {
@@ -44,7 +46,7 @@ form.addEventListener("submit", async (e) => {
   submitBtn.style.opacity = "1";
 });
 
-// popup control
+// ✅ Popup Control
 function showPopup(title, text, success = true) {
   popupTitle.textContent = title;
   popupText.textContent = text;

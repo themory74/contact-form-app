@@ -148,7 +148,6 @@
       box-shadow: 0 0 20px rgba(255, 179, 1, 0.4);
     }
 
-    /* popup modal */
     .popup {
       position: fixed;
       top: 0;
@@ -230,6 +229,12 @@
         <label for="email">Email Address</label>
       </div>
 
+      <!-- ✅ New Phone Number Field -->
+      <div class="form-group">
+        <input type="tel" id="phone" name="phone" placeholder=" " pattern="[0-9+\-\s()]{7,}" required />
+        <label for="phone">Phone Number</label>
+      </div>
+
       <div class="form-group">
         <textarea id="message" name="message" placeholder=" " required></textarea>
         <label for="message">Your Message</label>
@@ -239,7 +244,6 @@
     </form>
   </div>
 
-  <!-- popup modal -->
   <div class="popup" id="popup">
     <div class="popup-content" id="popupContent">
       <h3 id="popupTitle"></h3>
