@@ -17,7 +17,14 @@ const PORT = process.env.PORT || 3000;
 // ===============================================================
 // 🔧 MIDDLEWARE SETUP
 // ===============================================================
-app.use(cors());
+// Allow requests only from your live True Prime Digital domain
+app.use(
+  cors({
+    origin: ["https://trueprimedigital.com"], // ✅ Allow only your live site
+    methods: ["GET", "POST"],
+    allowedHeaders: ["Content-Type"],
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
