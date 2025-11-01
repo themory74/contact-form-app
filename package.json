@@ -1,21 +1,31 @@
 {
   "name": "contact-form-app",
   "version": "1.0.0",
-  "description": "True Prime Digital contact form backend",
+  "description": "True Prime Digital contact form backend with MongoDB, PostgreSQL, and Brevo integration.",
   "main": "server.js",
-  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
+  "keywords": [
+    "express",
+    "contact-form",
+    "mongodb",
+    "postgresql",
+    "brevo",
+    "backend"
+  ],
+  "author": "True Prime Digital LLC",
+  "license": "MIT",
   "dependencies": {
+    "axios": "^1.7.2",
     "cors": "^2.8.5",
-    "dotenv": "^16.6.1",
-    "express": "^4.21.2",
-    "express-rate-limit": "^7.0.0",
-    "helmet": "^7.1.0",
-    "mongoose": "^7.8.7",
-    "node-fetch": "^3.3.2",
-    "nodemailer": "^6.9.8",
-    "pg": "^8.16.3"
+    "dotenv": "^16.4.0",
+    "express": "^4.19.2",
+    "mongoose": "^8.3.1",
+    "pg": "^8.11.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
   }
 }

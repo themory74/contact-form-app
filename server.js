@@ -1,92 +1,158 @@
-import express from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-import dotenv from "dotenv";
-import fetch from "node-fetch";
-import mongoose from "mongoose";
-import pkg from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
+// ===============================================
+// True Prime Digital - Full Backend (Final Version)
+// MongoDB + PostgreSQL + Brevo + Frontend Serve
+// ===============================================
 
-dotenv.config();
-const { Pool } = pkg;
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const path = require("path");
+const mongoose = require("mongoose");
+const { Pool } = require("pg");
+const axios = require("axios");
+
 const app = express();
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const PORT = process.env.PORT || 3000;
 
+// ============ Middleware ============
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static frontend from /public (index.html, form.js, css, etc.)
 app.use(express.static(path.join(__dirname, "public")));
 
-// --- PostgreSQL setup ---
+// ============ MongoDB Connection ============
+mongoose
+  .connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("✅ MongoDB connected successfully"))
+  .catch((err) => console.error("❌ MongoDB Error:", err.message));
+
+// ============ PostgreSQL Connection ============
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
-pool.connect()
-  .then(() => console.log("✅ Connected to PostgreSQL (Render)"))
+
+pool
+  .connect()
+  .then(() => console.log("✅ PostgreSQL connected successfully"))
   .catch((err) => console.error("❌ PostgreSQL Error:", err.message));
 
-// --- MongoDB setup ---
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ Connected to MongoDB Atlas"))
-  .catch((err) => console.error("❌ MongoDB Error:", err.message));
+// ============ MongoDB Schema ============
+const Contact =
+  mongoose.models.Contact ||
+  mongoose.model(
+    "Contact",
+    new mongoose.Schema(
+      {
+        name: String,
+        email: String,
+        message: String,
+        createdAt: { type: Date, default: Date.now },
+      },
+      { collection: "contacts" }
+    )
+  );
 
-// --- MongoDB schema ---
-const contactSchema = new mongoose.Schema({
-  name: String,
-  email: String,
-  message: String,
-  createdAt: { type: Date, default: Date.now },
+// ============ Brevo Email Function ============
+async function sendEmail({ name, email, message }) {
+  if (!process.env.BREVO_API_KEY) {
+    console.log("⚠️ BREVO_API_KEY not set — skipping email send");
+    return;
+  }
+  try {
+    await axios.post(
+      "https://api.brevo.com/v3/smtp/email",
+      {
+        sender: { name: "True Prime Digital", email: "contact@trueprimedigital.com" },
+        to: [{ email: "contact@trueprimedigital.com" }], // change to your inbox
+        subject: `New Contact Form Submission - ${name}`,
+        htmlContent: `
+          <h2>New Contact Submission</h2>
+          <p><b>Name:</b> ${name}</p>
+          <p><b>Email:</b> ${email}</p>
+          <p><b>Message:</b><br/>${message}</p>
+        `,
+      },
+      {
+        headers: { "api-key": process.env.BREVO_API_KEY },
+      }
+    );
+    console.log("📧 Email sent successfully via Brevo");
+  } catch (err) {
+    console.error("❌ Brevo Email Error:", err.message);
+  }
+}
+
+// ============ Root Route ============
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
-const Contact = mongoose.model("Contact", contactSchema);
 
-// --- POST route ---
+// ============ Health Check ============
+app.get("/health", async (req, res) => {
+  res.json({
+    mongo: mongoose.connection.readyState === 1,
+    postgres: !!pool,
+    brevo: !!process.env.BREVO_API_KEY,
+    time: new Date().toISOString(),
+  });
+});
+
+// ============ Form Submission ============
 app.post("/submit", async (req, res) => {
   const { name, email, message } = req.body;
-  if (!name || !email || !message)
-    return res.status(400).json({ success: false, message: "All fields required." });
+
+  if (!name || !email || !message) {
+    return res.status(400).json({ success: false, message: "All fields are required." });
+  }
 
   try {
     // Save to MongoDB
-    const contact = await Contact.create({ name, email, message });
-    console.log("✅ Saved to MongoDB:", contact.id);
+    const contact = new Contact({ name, email, message });
+    await contact.save();
+    console.log("💾 Saved to MongoDB");
 
-    // Also store in PostgreSQL
+    // Log to PostgreSQL
     await pool.query(
-      "INSERT INTO contacts (name, email, message, created_at) VALUES ($1, $2, $3, NOW())",
+      "CREATE TABLE IF NOT EXISTS contacts (id SERIAL PRIMARY KEY, name TEXT, email TEXT, message TEXT, created_at TIMESTAMP DEFAULT NOW());"
+    );
+    await pool.query(
+      "INSERT INTO contacts (name, email, message) VALUES ($1, $2, $3)",
       [name, email, message]
     );
-    console.log("✅ Logged to PostgreSQL");
+    console.log("📊 Logged to PostgreSQL");
 
-    // Send email via Brevo
-    await fetch("https://api.brevo.com/v3/smtp/email", {
-      method: "POST",
-      headers: {
-        accept: "application/json",
-        "content-type": "application/json",
-        "api-key": process.env.BREVO_API_KEY,
-      },
-      body: JSON.stringify({
-        sender: { email: "contact@trueprimedigital.com", name: "True Prime Digital" },
-        to: [{ email: process.env.TO_EMAIL }],
-        subject: "📩 New Contact Form Submission",
-        htmlContent: `
-          <h2>New message from ${name}</h2>
-          <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong><br>${message}</p>
-        `,
-      }),
-    });
-    console.log("📧 Email sent via Brevo");
+    // Send confirmation email
+    await sendEmail({ name, email, message });
 
-    res.status(200).json({ success: true, message: "Form submitted successfully!" });
-  } catch (err) {
-    console.error("❌ Error:", err);
-    res.status(500).json({ success: false, message: "Server error. Please try again later." });
+    res.status(200).json({ success: true, message: "Message received successfully." });
+  } catch (error) {
+    console.error("❌ Error handling submission:", error.message);
+    res.status(500).json({ success: false, message: "Internal Server Error." });
   }
 });
 
-// --- Start server ---
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// ============ 404 + Error Handlers ============
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found." });
+});
+
+app.use((err, req, res, next) => {
+  console.error("🔥 Global Error:", err.message);
+  res.status(500).json({ error: "Internal Server Error" });
+});
+
+// ============ Start Server ============
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
+
+// Graceful Shutdown
+process.on("SIGINT", () => {
+  console.log("⚠️  Shutting down...");
+  mongoose.disconnect();
+  pool.end();
+  process.exit(0);
+});
