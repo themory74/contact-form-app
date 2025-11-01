@@ -1,44 +1,66 @@
 import express from "express";
-import dotenv from "dotenv";
 import cors from "cors";
+import bodyParser from "body-parser";
+import dotenv from "dotenv";
 import fetch from "node-fetch";
 import mongoose from "mongoose";
-import path, { dirname } from "path";
+import pkg from "pg";
+import path from "path";
 import { fileURLToPath } from "url";
-import Contact from "./models/Contact.js";
 
 dotenv.config();
-
+const { Pool } = pkg;
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.static("public"));
-
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname = path.dirname(__filename);
 
-// ===== CONNECT TO MONGODB =====
-mongoose
-  .connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("✅ MongoDB connected successfully"))
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+app.use(cors());
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, "public")));
 
-// ===== API ROUTE =====
-app.post("/api/contact", async (req, res) => {
+// --- PostgreSQL setup ---
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
+pool.connect()
+  .then(() => console.log("✅ Connected to PostgreSQL (Render)"))
+  .catch((err) => console.error("❌ PostgreSQL Error:", err.message));
+
+// --- MongoDB setup ---
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ Connected to MongoDB Atlas"))
+  .catch((err) => console.error("❌ MongoDB Error:", err.message));
+
+// --- MongoDB schema ---
+const contactSchema = new mongoose.Schema({
+  name: String,
+  email: String,
+  message: String,
+  createdAt: { type: Date, default: Date.now },
+});
+const Contact = mongoose.model("Contact", contactSchema);
+
+// --- POST route ---
+app.post("/submit", async (req, res) => {
+  const { name, email, message } = req.body;
+  if (!name || !email || !message)
+    return res.status(400).json({ success: false, message: "All fields required." });
+
   try {
-    const { name, email, message } = req.body;
-    console.log("🟢 New form received:", name, email);
-
     // Save to MongoDB
-    const newContact = new Contact({ name, email, message });
-    await newContact.save();
-    console.log("💾 Contact saved to MongoDB:", newContact);
+    const contact = await Contact.create({ name, email, message });
+    console.log("✅ Saved to MongoDB:", contact.id);
 
-    // Send via Brevo API
-    const brevoRes = await fetch("https://api.brevo.com/v3/smtp/email", {
+    // Also store in PostgreSQL
+    await pool.query(
+      "INSERT INTO contacts (name, email, message, created_at) VALUES ($1, $2, $3, NOW())",
+      [name, email, message]
+    );
+    console.log("✅ Logged to PostgreSQL");
+
+    // Send email via Brevo
+    await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: {
         accept: "application/json",
@@ -46,39 +68,25 @@ app.post("/api/contact", async (req, res) => {
         "api-key": process.env.BREVO_API_KEY,
       },
       body: JSON.stringify({
-        sender: { name: "True Prime Digital", email: process.env.TO_EMAIL },
+        sender: { email: "contact@trueprimedigital.com", name: "True Prime Digital" },
         to: [{ email: process.env.TO_EMAIL }],
-        subject: "📩 New Contact Form Message",
+        subject: "📩 New Contact Form Submission",
         htmlContent: `
-          <h3>New Message Received</h3>
-          <p><strong>Name:</strong> ${name}</p>
+          <h2>New message from ${name}</h2>
           <p><strong>Email:</strong> ${email}</p>
-          <p><strong>Message:</strong> ${message}</p>
+          <p><strong>Message:</strong><br>${message}</p>
         `,
       }),
     });
+    console.log("📧 Email sent via Brevo");
 
-    if (!brevoRes.ok) {
-      const text = await brevoRes.text();
-      console.error("❌ Brevo email failed:", text);
-      return res
-        .status(500)
-        .json({ success: false, error: "Email failed to send" });
-    }
-
-    console.log("✅ Email sent successfully via Brevo");
-    res.status(200).json({ success: true, message: "Message sent successfully!" });
-  } catch (error) {
-    console.error("❌ Error saving contact:", error);
-    res.status(500).json({ success: false, error: "Server error occurred" });
+    res.status(200).json({ success: true, message: "Form submitted successfully!" });
+  } catch (err) {
+    console.error("❌ Error:", err);
+    res.status(500).json({ success: false, message: "Server error. Please try again later." });
   }
 });
 
-// ===== FRONTEND ROUTE =====
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
-
-// ===== START SERVER =====
+// --- Start server ---
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
